@@ -4,6 +4,7 @@ public class DiscordConfig {
     private String botToken = "Bot Token Here";
     private String channelId = "111111111111111";
     private String commandChannelId = "222222222222222";
+    private String adminRoleId = "333333333333333";
     private boolean enabled = false;
     private String chatTagText = "Linked";
     private boolean showChatTag = true;
@@ -37,6 +38,7 @@ public class DiscordConfig {
     public String getBotToken() { return botToken; }
     public String getChannelId() { return channelId; }
     public String getCommandChannelId() { return commandChannelId; }
+    public String getAdminRoleId() { return adminRoleId; }
     public boolean isEnabled() { return enabled; }
     public String getChatTagText() { return chatTagText; }
     public boolean isShowChatTag() { return showChatTag; }
