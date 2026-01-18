@@ -22,7 +22,7 @@ public class DiscordIntegration extends JavaPlugin {
     
     private static DiscordIntegration instance;
     
-    private DiscordConfig config;
+    public DiscordConfig config;
     DiscordBot discordBot;
     private MessageRelay messageRelay;
     private PlayerDataStorage playerDataStorage;
@@ -74,6 +74,7 @@ public class DiscordIntegration extends JavaPlugin {
         
         getCommandRegistry().registerCommand(new LinkCommand());
         getCommandRegistry().registerCommand(new ProfileCommand());
+        getCommandRegistry().registerCommand(new DiscordConfigCommand());
         
         System.out.println("[Discord Integration] Event listeners and commands registered!");
 
@@ -151,7 +152,7 @@ public class DiscordIntegration extends JavaPlugin {
         updatePlayerCount();
     }
 
-    private void loadConfig() {
+    public void loadConfig() {
         File configFile = new File("mods/DiscordIntegration/config.json");
         
         if (!configFile.exists()) {
@@ -172,7 +173,7 @@ public class DiscordIntegration extends JavaPlugin {
         }
     }
 
-    private void saveConfig(File configFile) {
+    public void saveConfig(File configFile) {
         try (FileWriter writer = new FileWriter(configFile)) {
             gson.toJson(config, writer);
         } catch (IOException e) {
@@ -181,7 +182,7 @@ public class DiscordIntegration extends JavaPlugin {
     }
 
     private void handlePlayerChat(String username, String message) {
-        if (messageRelay != null) {
+        if (messageRelay != null && config.isEnableInGameChat()) {
             messageRelay.sendToDiscord(username, message);
         }
     }
