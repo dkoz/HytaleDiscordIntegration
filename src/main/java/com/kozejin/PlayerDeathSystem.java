@@ -8,6 +8,7 @@ import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.modules.entity.damage.DeathComponent;
 import com.hypixel.hytale.server.core.modules.entity.damage.DeathSystems;
+import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 
 import javax.annotation.Nonnull;
@@ -23,10 +24,10 @@ public class PlayerDeathSystem extends DeathSystems.OnDeathSystem {
     
     @Override
     public void onComponentAdded(
-            @Nonnull Ref ref,
+            @Nonnull Ref<EntityStore> ref,
             @Nonnull DeathComponent component,
-            @Nonnull Store store,
-            @Nonnull CommandBuffer commandBuffer) {
+            @Nonnull Store<EntityStore> store,
+            @Nonnull CommandBuffer<EntityStore> commandBuffer) {
         
         Player playerComponent = (Player) store.getComponent(ref, Player.getComponentType());
         
@@ -63,8 +64,9 @@ public class PlayerDeathSystem extends DeathSystems.OnDeathSystem {
             if (plugin != null) {
                 plugin.notifyPlayerDeath(playerName, cause);
                 
-                UUID playerUuid = playerComponent.getUuid();
-                if (playerUuid != null) {
+                PlayerRef playerRef = (PlayerRef) store.getComponent(ref, PlayerRef.getComponentType());
+                if (playerRef != null) {
+                    UUID playerUuid = playerRef.getUuid();
                     PlayerData data = plugin.getPlayerDataStorage().getPlayerData(playerUuid);
                     if (data != null) {
                         data.incrementDeaths();
