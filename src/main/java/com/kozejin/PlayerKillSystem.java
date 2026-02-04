@@ -14,6 +14,7 @@ import com.hypixel.hytale.server.core.modules.entitystats.EntityStatValue;
 import com.hypixel.hytale.server.core.modules.entitystats.asset.DefaultEntityStatTypes;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
+import com.hypixel.hytale.server.npc.entities.NPCEntity;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -34,25 +35,30 @@ public class PlayerKillSystem extends EntityEventSystem<EntityStore, Damage> {
         boolean died = health.get() <= 0;
         if (!died) return;
 
+        if (!(damage.getSource() instanceof Damage.EntitySource entitySource)) return;
+        
+        Ref<EntityStore> sourceRef = entitySource.getRef();
+        if (!sourceRef.isValid()) return;
+
+        Player killer = store.getComponent(sourceRef, Player.getComponentType());
+        if (killer == null) return;
+
+        DiscordIntegration plugin = DiscordIntegration.getInstance();
+        if (plugin == null) return;
+
+        PlayerRef killerRef = store.getComponent(sourceRef, PlayerRef.getComponentType());
+        if (killerRef == null) return;
+
+        PlayerData killerData = plugin.getPlayerDataStorage().getPlayerData(killerRef.getUuid());
+        if (killerData == null) return;
+
         Player victim = archetypeChunk.getComponent(i, Player.getComponentType());
-        if (victim == null) return;
-
-        if (damage.getSource() instanceof Damage.EntitySource entitySource) {
-            Ref<EntityStore> sourceRef = entitySource.getRef();
-            if (!sourceRef.isValid()) return;
-
-            Player killer = store.getComponent(sourceRef, Player.getComponentType());
-            if (killer == null) return;
-
-            DiscordIntegration plugin = DiscordIntegration.getInstance();
-            if (plugin != null) {
-                PlayerRef killerRef = store.getComponent(sourceRef, PlayerRef.getComponentType());
-                if (killerRef != null) {
-                    PlayerData killerData = plugin.getPlayerDataStorage().getPlayerData(killerRef.getUuid());
-                    if (killerData != null) {
-                        killerData.incrementPlayerKills();
-                    }
-                }
+        if (victim != null) {
+            killerData.incrementPlayerKills();
+        } else {
+            NPCEntity npc = archetypeChunk.getComponent(i, NPCEntity.getComponentType());
+            if (npc != null) {
+                killerData.incrementMobKills();
             }
         }
     }

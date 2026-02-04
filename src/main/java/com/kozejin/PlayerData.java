@@ -14,6 +14,7 @@ public class PlayerData {
     private int blocksPlaced;
     private int blocksBroken;
     private int playerKills;
+    private int mobKills;
 
     public PlayerData(UUID uuid, String username) {
         this.uuid = uuid;
@@ -27,6 +28,7 @@ public class PlayerData {
         this.blocksPlaced = 0;
         this.blocksBroken = 0;
         this.playerKills = 0;
+        this.mobKills = 0;
     }
 
     public UUID getUuid() {
@@ -134,4 +136,8 @@ public class PlayerData {
     public int getPlayerKills() { return playerKills; }
     public void setPlayerKills(int playerKills) { this.playerKills = playerKills; }
     public void incrementPlayerKills() { this.playerKills++; }
+    
+    public int getMobKills() { return mobKills; }
+    public void setMobKills(int mobKills) { this.mobKills = mobKills; }
+    public void incrementMobKills() { this.mobKills++; }
 }
