@@ -100,7 +100,8 @@ public class DiscordBot extends ListenerAdapter {
 
     @Override
     public void onMessageReceived(MessageReceivedEvent event) {
-        if (event.getAuthor().isBot()) return;
+        if (event.getAuthor().isBot() && !config.isAllowOtherBotMessages()) return;
+        if (event.getAuthor().getId().equals(jda.getSelfUser().getId())) return;
         
         String channelId = event.getChannel().getId();
         String username = event.getAuthor().getName();

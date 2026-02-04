@@ -16,6 +16,7 @@ public class DiscordConfig {
     private String serverAvatarUrl = "";
     private String defaultPlayerAvatarUrl = "";
     private int avatarCacheMinutes = 30;
+    private boolean allowOtherBotMessages = false;
     
     private ChatTagColors chatTagColors = new ChatTagColors();
     private MessageFormat messageFormat = new MessageFormat();
@@ -89,6 +90,9 @@ public class DiscordConfig {
     
     public int getAvatarCacheMinutes() { return avatarCacheMinutes; }
     public void setAvatarCacheMinutes(int avatarCacheMinutes) { this.avatarCacheMinutes = avatarCacheMinutes; }
+    
+    public boolean isAllowOtherBotMessages() { return allowOtherBotMessages; }
+    public void setAllowOtherBotMessages(boolean allowOtherBotMessages) { this.allowOtherBotMessages = allowOtherBotMessages; }
     
     public ChatTagColors getChatTagColors() { return chatTagColors; }
     public MessageFormat getMessageFormat() { return messageFormat; }
