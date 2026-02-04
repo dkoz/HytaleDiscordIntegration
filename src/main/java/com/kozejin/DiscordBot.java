@@ -1,5 +1,6 @@
 package com.kozejin;
 
+import com.google.gson.JsonObject;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Activity;
@@ -10,10 +11,17 @@ import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
 
 public class DiscordBot extends ListenerAdapter {
+    private static final HttpClient HTTP_CLIENT = HttpClient.newHttpClient();
+    
     private final DiscordConfig config;
     private final BiConsumer<String, String> onDiscordMessage;
     private JDA jda;
@@ -317,6 +325,72 @@ public class DiscordBot extends ListenerAdapter {
         if (jda != null) {
             String status = max > 0 ? online + "/" + max + " players online" : online + " players online";
             jda.getPresence().setActivity(Activity.playing(status));
+        }
+    }
+
+    public void sendWebhookMessage(String username, String content, String avatarUrl) {
+        if (!config.isUseWebhooks() || config.getWebhookUrl() == null || config.getWebhookUrl().isEmpty()) {
+            sendMessage("**" + username + "**: " + content);
+            return;
+        }
+
+        JsonObject json = new JsonObject();
+        json.addProperty("username", username);
+        json.addProperty("content", content);
+        if (avatarUrl != null && !avatarUrl.isEmpty()) {
+            json.addProperty("avatar_url", avatarUrl);
+        }
+
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(config.getWebhookUrl()))
+                .header("Content-Type", "application/json")
+                .header("User-Agent", "HytaleDiscordIntegration/1.0")
+                .POST(HttpRequest.BodyPublishers.ofString(json.toString()))
+                .build();
+
+        HTTP_CLIENT.sendAsync(request, HttpResponse.BodyHandlers.ofString())
+                .thenAccept(response -> {
+                    if (response.statusCode() >= 400) {
+                        System.err.println("[Discord] Webhook Error: " + response.statusCode() + " - " + response.body());
+                    }
+                })
+                .exceptionally(ex -> {
+                    System.err.println("[Discord] Webhook Network Error: " + ex.getMessage());
+                    return null;
+                });
+    }
+
+    public void dispatchToDiscord(UUID playerUuid, String name, String content, String fallbackAvatar) {
+        if (!config.isUseWebhooks()) {
+            if (!name.equals(config.getServerName())) {
+                sendMessage("**" + name + "**: " + content);
+            } else {
+                sendMessage(content);
+            }
+            return;
+        }
+
+        AvatarCache.setExpireTime(config.getAvatarCacheMinutes());
+
+        try {
+            if (playerUuid == null) {
+                sendWebhookMessage(name, content, fallbackAvatar);
+                return;
+            }
+
+            String cachedAvatar = AvatarCache.get(playerUuid.toString());
+            if (cachedAvatar != null) {
+                sendWebhookMessage(name, content, cachedAvatar);
+                return;
+            }
+
+            String hytaleAvatarUrl = "https://hyvatar.io/render/" + name + "?size=128";
+            AvatarCache.put(playerUuid.toString(), hytaleAvatarUrl);
+            sendWebhookMessage(name, content, hytaleAvatarUrl);
+        } catch (Exception e) {
+            System.err.println("[Discord] Dispatch error: " + e.getMessage());
+            e.printStackTrace();
+            sendWebhookMessage(name, content, fallbackAvatar);
         }
     }
 }

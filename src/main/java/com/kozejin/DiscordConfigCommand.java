@@ -21,7 +21,7 @@ public class DiscordConfigCommand extends AbstractPlayerCommand {
     
     @Override
     protected boolean canGeneratePermission() {
-        return false;
+        return true;
     }
 
     @Override

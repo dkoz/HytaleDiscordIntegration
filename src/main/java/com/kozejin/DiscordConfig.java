@@ -9,6 +9,14 @@ public class DiscordConfig {
     private String chatTagText = "Linked";
     private boolean showChatTag = true;
     private boolean enableInGameChat = true;
+    
+    private boolean useWebhooks = false;
+    private String webhookUrl = "";
+    private String serverName = "Server";
+    private String serverAvatarUrl = "";
+    private String defaultPlayerAvatarUrl = "";
+    private int avatarCacheMinutes = 30;
+    
     private ChatTagColors chatTagColors = new ChatTagColors();
     private MessageFormat messageFormat = new MessageFormat();
 
@@ -29,11 +37,15 @@ public class DiscordConfig {
         private String discordToServer = "[Discord] <{user}> {message}";
         private String joinMessage = "**{player}** joined the server";
         private String leaveMessage = "**{player}** left the server";
+        private String serverStartMessage = "**Server is now online!**";
+        private String serverStopMessage = "**Server is shutting down.**";
 
         public String getServerToDiscord() { return serverToDiscord; }
         public String getDiscordToServer() { return discordToServer; }
         public String getJoinMessage() { return joinMessage; }
         public String getLeaveMessage() { return leaveMessage; }
+        public String getServerStartMessage() { return serverStartMessage; }
+        public String getServerStopMessage() { return serverStopMessage; }
     }
 
     public String getBotToken() { return botToken; }
@@ -59,6 +71,25 @@ public class DiscordConfig {
     
     public boolean isEnableInGameChat() { return enableInGameChat; }
     public void setEnableInGameChat(boolean enableInGameChat) { this.enableInGameChat = enableInGameChat; }
+    
+    public boolean isUseWebhooks() { return useWebhooks; }
+    public void setUseWebhooks(boolean useWebhooks) { this.useWebhooks = useWebhooks; }
+    
+    public String getWebhookUrl() { return webhookUrl; }
+    public void setWebhookUrl(String webhookUrl) { this.webhookUrl = webhookUrl; }
+    
+    public String getServerName() { return serverName; }
+    public void setServerName(String serverName) { this.serverName = serverName; }
+    
+    public String getServerAvatarUrl() { return serverAvatarUrl; }
+    public void setServerAvatarUrl(String serverAvatarUrl) { this.serverAvatarUrl = serverAvatarUrl; }
+    
+    public String getDefaultPlayerAvatarUrl() { return defaultPlayerAvatarUrl; }
+    public void setDefaultPlayerAvatarUrl(String defaultPlayerAvatarUrl) { this.defaultPlayerAvatarUrl = defaultPlayerAvatarUrl; }
+    
+    public int getAvatarCacheMinutes() { return avatarCacheMinutes; }
+    public void setAvatarCacheMinutes(int avatarCacheMinutes) { this.avatarCacheMinutes = avatarCacheMinutes; }
+    
     public ChatTagColors getChatTagColors() { return chatTagColors; }
     public MessageFormat getMessageFormat() { return messageFormat; }
 }

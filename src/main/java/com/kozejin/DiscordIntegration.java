@@ -1,22 +1,28 @@
 package com.kozejin;
 
 import java.awt.Color;
+import java.util.UUID;
 import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.event.EventPriority;
 import com.hypixel.hytale.server.core.event.events.player.PlayerChatEvent;
+import com.hypixel.hytale.server.core.event.events.BootEvent;
+import com.hypixel.hytale.server.core.event.events.ShutdownEvent;
 import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import com.hypixel.hytale.server.core.plugin.JavaPluginInit;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.Universe;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
 import javax.annotation.Nonnull;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.concurrent.CompletableFuture;
+import java.util.Map;
 
 public class DiscordIntegration extends JavaPlugin {
     
@@ -71,6 +77,8 @@ public class DiscordIntegration extends JavaPlugin {
         
         getEventRegistry().register(com.hypixel.hytale.server.core.event.events.player.PlayerConnectEvent.class, this::onPlayerJoin);
         getEventRegistry().register(com.hypixel.hytale.server.core.event.events.player.PlayerDisconnectEvent.class, this::onPlayerLeave);
+        getEventRegistry().register(BootEvent.class, this::onServerBoot);
+        getEventRegistry().register(ShutdownEvent.class, this::onServerShutdown);
         
         getCommandRegistry().registerCommand(new LinkCommand());
         getCommandRegistry().registerCommand(new ProfileCommand());
@@ -107,7 +115,7 @@ public class DiscordIntegration extends JavaPlugin {
             });
         }
         
-        handlePlayerChat(sender.getUsername(), message);
+        handlePlayerChat(sender.getUuid(), sender.getUsername(), message);
     }
 
     public void onDisable() {
@@ -151,6 +159,22 @@ public class DiscordIntegration extends JavaPlugin {
         handlePlayerLeave(playerRef.getUsername());
         updatePlayerCount();
     }
+    
+    private void onServerBoot(BootEvent event) {
+        System.out.println("[Discord Integration] Server boot event received");
+        java.util.concurrent.Executors.newSingleThreadScheduledExecutor().schedule(() -> {
+            handleServerStart();
+        }, 2, java.util.concurrent.TimeUnit.SECONDS);
+    }
+    
+    private void onServerShutdown(ShutdownEvent event) {
+        System.out.println("[Discord Integration] Server shutdown event received");
+        handleServerStop();
+        
+        if (discordBot != null) {
+            discordBot.shutdown();
+        }
+    }
 
     public void loadConfig() {
         File configFile = new File("mods/DiscordIntegration/config.json");
@@ -163,7 +187,24 @@ public class DiscordIntegration extends JavaPlugin {
             System.out.println("[Discord Integration] Please configure your bot token and channel IDs!");
         } else {
             try (FileReader reader = new FileReader(configFile)) {
-                config = gson.fromJson(reader, DiscordConfig.class);
+                JsonElement parsed = JsonParser.parseReader(reader);
+                if (!parsed.isJsonObject()) {
+                    throw new IllegalStateException("Config root must be a JSON object");
+                }
+
+                JsonObject existingJson = parsed.getAsJsonObject();
+
+                JsonObject defaultsJson = gson.toJsonTree(new DiscordConfig()).getAsJsonObject();
+                boolean updated = mergeMissingJson(existingJson, defaultsJson);
+
+                if (updated) {
+                    try (FileWriter writer = new FileWriter(configFile)) {
+                        gson.toJson(existingJson, writer);
+                    }
+                    System.out.println("[Discord Integration] Updated config with missing default settings");
+                }
+
+                config = gson.fromJson(existingJson, DiscordConfig.class);
                 System.out.println("[Discord Integration] Config loaded successfully");
             } catch (Exception e) {
                 System.out.println("[Discord Integration] Error loading config: " + e.getMessage());
@@ -171,6 +212,28 @@ public class DiscordIntegration extends JavaPlugin {
                 saveConfig(configFile);
             }
         }
+    }
+
+    private boolean mergeMissingJson(JsonObject target, JsonObject defaults) {
+        boolean changed = false;
+
+        for (Map.Entry<String, JsonElement> entry : defaults.entrySet()) {
+            String key = entry.getKey();
+            JsonElement defaultValue = entry.getValue();
+
+            if (!target.has(key) || target.get(key).isJsonNull()) {
+                target.add(key, defaultValue);
+                changed = true;
+                continue;
+            }
+
+            JsonElement currentValue = target.get(key);
+            if (currentValue.isJsonObject() && defaultValue.isJsonObject()) {
+                changed |= mergeMissingJson(currentValue.getAsJsonObject(), defaultValue.getAsJsonObject());
+            }
+        }
+
+        return changed;
     }
 
     public void saveConfig(File configFile) {
@@ -181,9 +244,9 @@ public class DiscordIntegration extends JavaPlugin {
         }
     }
 
-    private void handlePlayerChat(String username, String message) {
+    private void handlePlayerChat(UUID playerUuid, String username, String message) {
         if (messageRelay != null && config.isEnableInGameChat()) {
-            messageRelay.sendToDiscord(username, message);
+            messageRelay.sendToDiscord(playerUuid, username, message);
         }
     }
 
@@ -196,6 +259,18 @@ public class DiscordIntegration extends JavaPlugin {
     private void handlePlayerLeave(String username) {
         if (messageRelay != null) {
             messageRelay.sendLeaveMessage(username);
+        }
+    }
+    
+    private void handleServerStart() {
+        if (messageRelay != null) {
+            messageRelay.sendServerStartMessage();
+        }
+    }
+    
+    private void handleServerStop() {
+        if (messageRelay != null) {
+            messageRelay.sendServerStopMessage();
         }
     }
 
