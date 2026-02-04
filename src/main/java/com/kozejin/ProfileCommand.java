@@ -75,5 +75,8 @@ public class ProfileCommand extends AbstractPlayerCommand {
         player.sendMessage(Message.raw("First Login: " + firstLoginDate));
         player.sendMessage(Message.raw("Discord: " + discordStatus));
         player.sendMessage(Message.raw("Deaths: " + playerData.getTotalDeaths()));
+        player.sendMessage(Message.raw("Player Kills: " + playerData.getPlayerKills()));
+        player.sendMessage(Message.raw("Blocks Placed: " + playerData.getBlocksPlaced()));
+        player.sendMessage(Message.raw("Blocks Broken: " + playerData.getBlocksBroken()));
     }
 }

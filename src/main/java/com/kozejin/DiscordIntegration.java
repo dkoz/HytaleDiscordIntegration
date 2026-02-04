@@ -85,6 +85,9 @@ public class DiscordIntegration extends JavaPlugin {
         getCommandRegistry().registerCommand(new DiscordConfigCommand());
         
         getEntityStoreRegistry().registerSystem(new PlayerDeathSystem());
+        getEntityStoreRegistry().registerSystem(new BlockPlaceSystem());
+        getEntityStoreRegistry().registerSystem(new BlockBreakSystem());
+        getEntityStoreRegistry().registerSystem(new PlayerKillSystem());
         
         System.out.println("[Discord Integration] Event listeners and commands registered!");
 

@@ -11,6 +11,9 @@ public class PlayerData {
     private long currentSessionStart;
     private String discordId;
     private int totalDeaths;
+    private int blocksPlaced;
+    private int blocksBroken;
+    private int playerKills;
 
     public PlayerData(UUID uuid, String username) {
         this.uuid = uuid;
@@ -21,6 +24,9 @@ public class PlayerData {
         this.currentSessionStart = -1;
         this.discordId = null;
         this.totalDeaths = 0;
+        this.blocksPlaced = 0;
+        this.blocksBroken = 0;
+        this.playerKills = 0;
     }
 
     public UUID getUuid() {
@@ -116,4 +122,16 @@ public class PlayerData {
     public int getTotalDeaths() { return totalDeaths; }
     public void setTotalDeaths(int totalDeaths) { this.totalDeaths = totalDeaths; }
     public void incrementDeaths() { this.totalDeaths++; }
+    
+    public int getBlocksPlaced() { return blocksPlaced; }
+    public void setBlocksPlaced(int blocksPlaced) { this.blocksPlaced = blocksPlaced; }
+    public void incrementBlocksPlaced() { this.blocksPlaced++; }
+    
+    public int getBlocksBroken() { return blocksBroken; }
+    public void setBlocksBroken(int blocksBroken) { this.blocksBroken = blocksBroken; }
+    public void incrementBlocksBroken() { this.blocksBroken++; }
+    
+    public int getPlayerKills() { return playerKills; }
+    public void setPlayerKills(int playerKills) { this.playerKills = playerKills; }
+    public void incrementPlayerKills() { this.playerKills++; }
 }
