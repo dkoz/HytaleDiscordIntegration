@@ -40,7 +40,7 @@ public class DiscordConfig {
         private String discordToServer = "[Discord] <{user}> {message}";
         private String joinMessage = "**{player}** joined the server";
         private String leaveMessage = "**{player}** left the server";
-        private String deathMessage = "**{player}** {cause}";
+        private String deathMessage = "**{player}** died to {cause}";
         private String serverStartMessage = "**Server is now online!**";
         private String serverStopMessage = "**Server is shutting down.**";
 

@@ -350,6 +350,25 @@ public class DiscordBot extends ListenerAdapter {
             );
         });
     }
+    
+    public void sendLinkConfirmationDM(String discordId, String hytaleUsername) {
+        if (jda == null) return;
+        
+        jda.retrieveUserById(discordId).queue(
+            user -> {
+                user.openPrivateChannel().queue(
+                    channel -> {
+                        channel.sendMessage("Your Discord account has been successfully linked to your Hytale account **" + hytaleUsername + "**!").queue(
+                            success -> System.out.println("[Discord] Sent link confirmation DM to " + user.getName()),
+                            error -> System.err.println("[Discord] Failed to send DM: " + error.getMessage())
+                        );
+                    },
+                    error -> System.err.println("[Discord] Failed to open DM channel: " + error.getMessage())
+                );
+            },
+            error -> System.err.println("[Discord] Failed to retrieve user: " + error.getMessage())
+        );
+    }
 
     public void sendWebhookMessage(String username, String content, String avatarUrl) {
         if (!config.isUseWebhooks() || config.getWebhookUrl() == null || config.getWebhookUrl().isEmpty()) {

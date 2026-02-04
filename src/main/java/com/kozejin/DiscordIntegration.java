@@ -326,12 +326,13 @@ public class DiscordIntegration extends JavaPlugin {
         }
     }
     
-    public void notifyDiscordLink(String discordId, String minecraftUsername, boolean success) {
+    public void notifyDiscordLink(String discordId, String hytaleUsername, boolean success) {
         if (discordBot == null || !discordBot.isConnected()) return;
         
         if (success) {
-            discordBot.sendMessage("Successfully linked to **" + minecraftUsername + "**!");
+            discordBot.sendMessage("Successfully linked to **" + hytaleUsername + "**!");
             discordBot.assignLinkedRole(discordId);
+            discordBot.sendLinkConfirmationDM(discordId, hytaleUsername);
         } else {
             discordBot.sendMessage("Failed to link account.");
         }
