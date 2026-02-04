@@ -93,4 +93,25 @@ public class MessageRelay {
             }
         }
     }
+
+    public void sendDeathMessage(String playerName, String cause) {
+        if (!config.isEnableDeathMessages()) {
+            return;
+        }
+
+        DiscordBot bot = DiscordIntegration.getInstance().discordBot;
+        if (bot != null && bot.isConnected()) {
+            String causeText = (cause == null || cause.isEmpty()) ? "died" : cause;
+            String formatted = config.getMessageFormat().getDeathMessage()
+                .replace("{player}", playerName)
+                .replace("{cause}", causeText);
+            
+            if (config.isUseWebhooks()) {
+                bot.dispatchToDiscord(null, config.getServerName(), formatted, config.getServerAvatarUrl());
+            } else {
+                System.out.println("[Discord Integration] Sending to Discord: " + formatted);
+                bot.sendMessage(formatted);
+            }
+        }
+    }
 }

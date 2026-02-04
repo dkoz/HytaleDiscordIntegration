@@ -10,6 +10,7 @@ public class PlayerData {
     private long totalPlayTime;
     private long currentSessionStart;
     private String discordId;
+    private int totalDeaths;
 
     public PlayerData(UUID uuid, String username) {
         this.uuid = uuid;
@@ -19,6 +20,7 @@ public class PlayerData {
         this.totalPlayTime = 0;
         this.currentSessionStart = -1;
         this.discordId = null;
+        this.totalDeaths = 0;
     }
 
     public UUID getUuid() {
@@ -110,4 +112,8 @@ public class PlayerData {
             return String.format("%ds", seconds);
         }
     }
+    
+    public int getTotalDeaths() { return totalDeaths; }
+    public void setTotalDeaths(int totalDeaths) { this.totalDeaths = totalDeaths; }
+    public void incrementDeaths() { this.totalDeaths++; }
 }

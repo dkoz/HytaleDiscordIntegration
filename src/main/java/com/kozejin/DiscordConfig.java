@@ -10,6 +10,8 @@ public class DiscordConfig {
     private String chatTagText = "Linked";
     private boolean showChatTag = true;
     private boolean enableInGameChat = true;
+    private boolean allowOtherBotMessages = false;
+    private boolean enableDeathMessages = true;
     
     private boolean useWebhooks = false;
     private String webhookUrl = "";
@@ -17,7 +19,6 @@ public class DiscordConfig {
     private String serverAvatarUrl = "";
     private String defaultPlayerAvatarUrl = "";
     private int avatarCacheMinutes = 30;
-    private boolean allowOtherBotMessages = false;
     
     private ChatTagColors chatTagColors = new ChatTagColors();
     private MessageFormat messageFormat = new MessageFormat();
@@ -39,6 +40,7 @@ public class DiscordConfig {
         private String discordToServer = "[Discord] <{user}> {message}";
         private String joinMessage = "**{player}** joined the server";
         private String leaveMessage = "**{player}** left the server";
+        private String deathMessage = "**{player}** {cause}";
         private String serverStartMessage = "**Server is now online!**";
         private String serverStopMessage = "**Server is shutting down.**";
 
@@ -46,6 +48,7 @@ public class DiscordConfig {
         public String getDiscordToServer() { return discordToServer; }
         public String getJoinMessage() { return joinMessage; }
         public String getLeaveMessage() { return leaveMessage; }
+        public String getDeathMessage() { return deathMessage; }
         public String getServerStartMessage() { return serverStartMessage; }
         public String getServerStopMessage() { return serverStopMessage; }
     }
@@ -97,6 +100,9 @@ public class DiscordConfig {
     
     public boolean isAllowOtherBotMessages() { return allowOtherBotMessages; }
     public void setAllowOtherBotMessages(boolean allowOtherBotMessages) { this.allowOtherBotMessages = allowOtherBotMessages; }
+    
+    public boolean isEnableDeathMessages() { return enableDeathMessages; }
+    public void setEnableDeathMessages(boolean enableDeathMessages) { this.enableDeathMessages = enableDeathMessages; }
     
     public ChatTagColors getChatTagColors() { return chatTagColors; }
     public MessageFormat getMessageFormat() { return messageFormat; }

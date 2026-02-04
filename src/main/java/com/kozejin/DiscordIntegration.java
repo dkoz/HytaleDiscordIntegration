@@ -84,6 +84,8 @@ public class DiscordIntegration extends JavaPlugin {
         getCommandRegistry().registerCommand(new ProfileCommand());
         getCommandRegistry().registerCommand(new DiscordConfigCommand());
         
+        getEntityStoreRegistry().registerSystem(new PlayerDeathSystem());
+        
         System.out.println("[Discord Integration] Event listeners and commands registered!");
 
         System.out.println("[Discord Integration] Plugin enabled!");
@@ -313,6 +315,12 @@ public class DiscordIntegration extends JavaPlugin {
     
     public LinkCodeManager getLinkCodeManager() {
         return linkCodeManager;
+    }
+    
+    public void notifyPlayerDeath(String username, String cause) {
+        if (messageRelay != null) {
+            messageRelay.sendDeathMessage(username, cause);
+        }
     }
     
     public void notifyDiscordLink(String discordId, String minecraftUsername, boolean success) {

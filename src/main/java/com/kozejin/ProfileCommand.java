@@ -74,5 +74,6 @@ public class ProfileCommand extends AbstractPlayerCommand {
         player.sendMessage(Message.raw("Total Playtime: " + playerData.getFormattedPlayTime()));
         player.sendMessage(Message.raw("First Login: " + firstLoginDate));
         player.sendMessage(Message.raw("Discord: " + discordStatus));
+        player.sendMessage(Message.raw("Deaths: " + playerData.getTotalDeaths()));
     }
 }
