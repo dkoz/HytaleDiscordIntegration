@@ -4,6 +4,7 @@ import com.google.gson.JsonObject;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Activity;
+import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -327,6 +328,27 @@ public class DiscordBot extends ListenerAdapter {
             String status = max > 0 ? online + "/" + max + " players online" : online + " players online";
             jda.getPresence().setActivity(Activity.playing(status));
         }
+    }
+
+    public void assignLinkedRole(String discordId) {
+        if (jda == null || config.getLinkedRoleId() == null || config.getLinkedRoleId().isEmpty()) {
+            return;
+        }
+
+        jda.getGuilds().forEach(guild -> {
+            guild.retrieveMemberById(discordId).queue(
+                member -> {
+                    Role role = guild.getRoleById(config.getLinkedRoleId());
+                    if (role != null) {
+                        guild.addRoleToMember(member, role).queue(
+                            success -> System.out.println("[Discord] Assigned linked role to " + member.getUser().getName()),
+                            error -> System.err.println("[Discord] Failed to assign role: " + error.getMessage())
+                        );
+                    }
+                },
+                error -> System.err.println("[Discord] Failed to retrieve member: " + error.getMessage())
+            );
+        });
     }
 
     public void sendWebhookMessage(String username, String content, String avatarUrl) {

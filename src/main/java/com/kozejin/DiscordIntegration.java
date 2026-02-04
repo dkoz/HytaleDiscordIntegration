@@ -320,6 +320,7 @@ public class DiscordIntegration extends JavaPlugin {
         
         if (success) {
             discordBot.sendMessage("Successfully linked to **" + minecraftUsername + "**!");
+            discordBot.assignLinkedRole(discordId);
         } else {
             discordBot.sendMessage("Failed to link account.");
         }

@@ -5,6 +5,7 @@ public class DiscordConfig {
     private String channelId = "111111111111111";
     private String commandChannelId = "222222222222222";
     private String adminRoleId = "333333333333333";
+    private String linkedRoleId = "";
     private boolean enabled = false;
     private String chatTagText = "Linked";
     private boolean showChatTag = true;
@@ -60,6 +61,9 @@ public class DiscordConfig {
     
     public String getAdminRoleId() { return adminRoleId; }
     public void setAdminRoleId(String adminRoleId) { this.adminRoleId = adminRoleId; }
+    
+    public String getLinkedRoleId() { return linkedRoleId; }
+    public void setLinkedRoleId(String linkedRoleId) { this.linkedRoleId = linkedRoleId; }
     
     public boolean isEnabled() { return enabled; }
     public void setEnabled(boolean enabled) { this.enabled = enabled; }
