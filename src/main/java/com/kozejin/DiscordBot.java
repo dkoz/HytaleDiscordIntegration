@@ -9,7 +9,10 @@ import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
+import net.dv8tion.jda.api.interactions.commands.OptionType;
+import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 
 import java.net.URI;
@@ -69,6 +72,9 @@ public class DiscordBot extends ListenerAdapter {
             }
 
             System.out.println("[Discord] Bot connected successfully to channel: " + textChannel.getName());
+            
+            syncCommands();
+            
             updatePlayerCount(0, 0);
             future.complete(true);
 
@@ -79,6 +85,23 @@ public class DiscordBot extends ListenerAdapter {
         }
 
         return future;
+    }
+
+    public void syncCommands() {
+        if (jda == null) return;
+        
+        jda.updateCommands().addCommands(
+            Commands.slash("link", "Get a link code to connect your Discord account to Hytale"),
+            Commands.slash("profile", "View player profile and stats")
+                .addOption(OptionType.STRING, "username", "Player username (optional)", false),
+            Commands.slash("players", "List online players")
+                .addOption(OptionType.INTEGER, "page", "Page number (optional)", false),
+            Commands.slash("me", "View your linked Hytale profile"),
+            Commands.slash("sync", "Sync slash commands with Discord")
+        ).queue(
+            success -> System.out.println("[Discord] Slash commands synced successfully"),
+            error -> System.err.println("[Discord] Failed to sync slash commands: " + error.getMessage())
+        );
     }
 
     public void shutdown() {
@@ -100,6 +123,27 @@ public class DiscordBot extends ListenerAdapter {
     }
 
     @Override
+    public void onSlashCommandInteraction(SlashCommandInteractionEvent event) {
+        switch (event.getName()) {
+            case "link":
+                handleLinkSlashCommand(event);
+                break;
+            case "profile":
+                handleProfileSlashCommand(event);
+                break;
+            case "players":
+                handlePlayersSlashCommand(event);
+                break;
+            case "me":
+                handleMeSlashCommand(event);
+                break;
+            case "sync":
+                handleSyncSlashCommand(event);
+                break;
+        }
+    }
+
+    @Override
     public void onMessageReceived(MessageReceivedEvent event) {
         if (event.getAuthor().isBot() && !config.isAllowOtherBotMessages()) return;
         if (event.getAuthor().getId().equals(jda.getSelfUser().getId())) return;
@@ -108,21 +152,10 @@ public class DiscordBot extends ListenerAdapter {
         String username = event.getAuthor().getName();
         String message = event.getMessage().getContentDisplay();
 
-        if (channelId.equals(config.getCommandChannelId())) {
-            if (message.equalsIgnoreCase("!link")) {
-                handleLinkCommand(event);
-                return;
-            }
-            
-            if (message.toLowerCase().startsWith("!profile")) {
-                handleProfileCommand(event, message);
-                return;
-            }
-            
-            if (message.toLowerCase().startsWith("!players")) {
-                handlePlayersCommand(event, message);
-                return;
-            }
+        if (message.equalsIgnoreCase("!sync") && hasAdminRole(event.getMember())) {
+            syncCommands();
+            event.getChannel().sendMessage("Slash commands synced with Discord!").queue();
+            return;
         }
 
         if (channelId.equals(config.getChannelId())) {
@@ -130,9 +163,9 @@ public class DiscordBot extends ListenerAdapter {
         }
     }
 
-    private void handleLinkCommand(MessageReceivedEvent event) {
-        String discordId = event.getAuthor().getId();
-        String discordUsername = event.getAuthor().getName();
+    private void handleLinkSlashCommand(SlashCommandInteractionEvent event) {
+        String discordId = event.getUser().getId();
+        String discordUsername = event.getUser().getName();
 
         LinkCodeManager linkManager = DiscordIntegration.getInstance().getLinkCodeManager();
         String code = linkManager.generateCode(discordId, discordUsername);
@@ -146,71 +179,46 @@ public class DiscordBot extends ListenerAdapter {
             .setFooter("Discord Integration", null)
             .build();
 
-        event.getAuthor().openPrivateChannel().queue(privateChannel -> {
+        event.getUser().openPrivateChannel().queue(privateChannel -> {
             privateChannel.sendMessageEmbeds(embed).queue(
                 success -> {
-                    MessageEmbed successEmbed = new EmbedBuilder()
-                        .setTitle("Link Code Sent")
-                        .setColor(0x00FF00)
-                        .setDescription("Check your DMs for your link code!")
-                        .setFooter("Discord Integration", null)
-                        .build();
-                    event.getChannel().sendMessageEmbeds(successEmbed).queue();
+                    event.reply("Check your DMs for your link code!").setEphemeral(true).queue();
                     System.out.println("[Discord Integration] Generated link code for " + discordUsername + ": " + code);
                 },
                 error -> {
-                    MessageEmbed errorEmbed = new EmbedBuilder()
-                        .setTitle("DM Failed")
-                        .setColor(0xFF0000)
-                        .setDescription("Could not send you a DM. Please enable DMs from server members.")
-                        .setFooter("Discord Integration", null)
-                        .build();
-                    event.getChannel().sendMessageEmbeds(errorEmbed).queue();
+                    event.reply("Could not send you a DM. Please enable DMs from server members.").setEphemeral(true).queue();
                     System.out.println("[Discord Integration] Failed to DM link code to " + discordUsername);
                 }
             );
         });
     }
     
-    private void handleProfileCommand(MessageReceivedEvent event, String message) {
-        String[] parts = message.split("\\s+");
-        String discordId = event.getAuthor().getId();
+    private void handleProfileSlashCommand(SlashCommandInteractionEvent event) {
+        String username = event.getOption("username") != null ? event.getOption("username").getAsString() : null;
+        String discordId = event.getUser().getId();
         
         PlayerDataStorage storage = DiscordIntegration.getInstance().getPlayerDataStorage();
         PlayerData playerData = null;
         String targetUsername = null;
         
-        if (parts.length > 1) {
-            targetUsername = parts[1];
+        if (username != null) {
             for (PlayerData data : storage.getAllPlayers().values()) {
-                if (data.getUsername().equalsIgnoreCase(targetUsername)) {
+                if (data.getUsername().equalsIgnoreCase(username)) {
                     playerData = data;
                     break;
                 }
             }
             
             if (playerData == null) {
-                MessageEmbed embed = new EmbedBuilder()
-                    .setTitle("Player Not Found")
-                    .setColor(0xFF0000)
-                    .setDescription("Player `" + targetUsername + "` not found!")
-                    .setFooter("Discord Integration", null)
-                    .build();
-                event.getChannel().sendMessageEmbeds(embed).queue();
+                event.reply("Player `" + username + "` not found!").setEphemeral(true).queue();
                 return;
             }
+            targetUsername = username;
         } else {
             playerData = storage.getPlayerByDiscordId(discordId);
             
             if (playerData == null) {
-                MessageEmbed embed = new EmbedBuilder()
-                    .setTitle("Account Not Linked")
-                    .setColor(0xFFAA00)
-                    .setDescription("Your Discord account is not linked!")
-                    .addField("How to Link", "Use `!link` to get a link code, then use `/link <code>` in-game", false)
-                    .setFooter("Discord Integration", null)
-                    .build();
-                event.getChannel().sendMessageEmbeds(embed).queue();
+                event.reply("Your Discord account is not linked! Use `/link` to get a link code.").setEphemeral(true).queue();
                 return;
             }
             targetUsername = playerData.getUsername();
@@ -226,22 +234,20 @@ public class DiscordBot extends ListenerAdapter {
             .addField("Total Playtime", playerData.getFormattedPlayTime(), true)
             .addField("First Login", firstLoginDate, true)
             .addField("Discord", discordTag, false)
+            .addField("Player Kills", String.valueOf(playerData.getPlayerKills()), true)
+            .addField("Mob Kills", String.valueOf(playerData.getMobKills()), true)
+            .addField("Deaths", String.valueOf(playerData.getTotalDeaths()), true)
+            .addField("Blocks Placed", String.valueOf(playerData.getBlocksPlaced()), true)
+            .addField("Blocks Broken", String.valueOf(playerData.getBlocksBroken()), true)
             .setFooter("Discord Integration", null)
             .build();
         
-        event.getChannel().sendMessageEmbeds(embed).queue();
-        System.out.println("[Discord Integration] Profile requested for: " + targetUsername);
+        event.replyEmbeds(embed).queue();
     }
     
-    private void handlePlayersCommand(MessageReceivedEvent event, String message) {
-        if (!hasAdminRole(event)) {
-            MessageEmbed errorEmbed = new EmbedBuilder()
-                .setTitle("Access Denied")
-                .setColor(0xFF0000)
-                .setDescription("You need admin permissions to use this command.")
-                .setFooter("Discord Integration", null)
-                .build();
-            event.getChannel().sendMessageEmbeds(errorEmbed).queue();
+    private void handlePlayersSlashCommand(SlashCommandInteractionEvent event) {
+        if (!hasAdminRole(event.getMember())) {
+            event.reply("You need admin permissions to use this command.").setEphemeral(true).queue();
             return;
         }
         
@@ -251,13 +257,7 @@ public class DiscordBot extends ListenerAdapter {
         int playerCount = onlinePlayers.size();
         
         if (playerCount == 0) {
-            MessageEmbed embed = new EmbedBuilder()
-                .setTitle("Server Status")
-                .setColor(0x00FFFF)
-                .setDescription("No players are currently online.")
-                .setFooter("Discord Integration", null)
-                .build();
-            event.getChannel().sendMessageEmbeds(embed).queue();
+            event.reply("No players are currently online.").queue();
             return;
         }
         
@@ -266,57 +266,79 @@ public class DiscordBot extends ListenerAdapter {
             playerNames.add(player.getUsername());
         }
         
-        String[] parts = message.split("\\s+");
-        int page = 1;
+        int page = event.getOption("page") != null ? event.getOption("page").getAsInt() : 1;
+        if (page < 1) page = 1;
         
-        if (parts.length > 1) {
-            try {
-                page = Integer.parseInt(parts[1]);
-                if (page < 1) page = 1;
-            } catch (NumberFormatException e) {
-                page = 1;
-            }
-        }
+        int playersPerPage = 10;
+        int totalPages = (int) Math.ceil((double) playerNames.size() / playersPerPage);
         
-        int playersPerPage = 15;
-        int totalPages = (int) Math.ceil((double) playerCount / playersPerPage);
+        if (page > totalPages) page = totalPages;
         
-        if (page > totalPages) {
-            page = totalPages;
-        }
-        
-        sendPlayersPage(event, playerNames, page, totalPages, playersPerPage);
-        System.out.println("[Discord Integration] Players list page " + page + " requested by admin (" + playerCount + " online)");
-    }
-    
-    private boolean hasAdminRole(MessageReceivedEvent event) {
-        String adminRoleId = config.getAdminRoleId();
-        if (adminRoleId == null || adminRoleId.isEmpty()) {
-            return true;
-        }
-        
-        return event.getMember() != null && 
-               event.getMember().getRoles().stream()
-                   .anyMatch(role -> role.getId().equals(adminRoleId));
-    }
-    
-    private void sendPlayersPage(MessageReceivedEvent event, java.util.List<String> playerNames, int page, int totalPages, int playersPerPage) {
         int startIndex = (page - 1) * playersPerPage;
         int endIndex = Math.min(startIndex + playersPerPage, playerNames.size());
         
         StringBuilder playerList = new StringBuilder();
         for (int i = startIndex; i < endIndex; i++) {
-            playerList.append("• ").append(playerNames.get(i)).append("\n");
+            playerList.append((i + 1)).append(". ").append(playerNames.get(i)).append("\n");
         }
         
         MessageEmbed embed = new EmbedBuilder()
             .setTitle("Players Online (" + playerNames.size() + ")")
             .setColor(0x00FFFF)
             .setDescription(playerList.toString())
-            .setFooter("Page " + page + "/" + totalPages + " | Use !players <page> to navigate", null)
+            .setFooter("Page " + page + "/" + totalPages, null)
             .build();
         
-        event.getChannel().sendMessageEmbeds(embed).queue();
+        event.replyEmbeds(embed).queue();
+    }
+    
+    private void handleMeSlashCommand(SlashCommandInteractionEvent event) {
+        String discordId = event.getUser().getId();
+        
+        PlayerDataStorage storage = DiscordIntegration.getInstance().getPlayerDataStorage();
+        PlayerData playerData = storage.getPlayerByDiscordId(discordId);
+        
+        if (playerData == null) {
+            event.reply("Your Discord account is not linked! Use `/link` to get a link code.").setEphemeral(true).queue();
+            return;
+        }
+        
+        String discordTag = "<@" + playerData.getDiscordId() + ">";
+        long firstLogin = playerData.getFirstLoginTime();
+        String firstLoginDate = new java.text.SimpleDateFormat("MMM dd, yyyy").format(new java.util.Date(firstLogin));
+        
+        MessageEmbed embed = new EmbedBuilder()
+            .setTitle("Your Profile: " + playerData.getUsername())
+            .setColor(0x5865F2)
+            .addField("Total Playtime", playerData.getFormattedPlayTime(), true)
+            .addField("First Login", firstLoginDate, true)
+            .addField("Discord", discordTag, false)
+            .addField("Player Kills", String.valueOf(playerData.getPlayerKills()), true)
+            .addField("Mob Kills", String.valueOf(playerData.getMobKills()), true)
+            .addField("Deaths", String.valueOf(playerData.getTotalDeaths()), true)
+            .addField("Blocks Placed", String.valueOf(playerData.getBlocksPlaced()), true)
+            .addField("Blocks Broken", String.valueOf(playerData.getBlocksBroken()), true)
+            .setFooter("Discord Integration", null)
+            .build();
+        
+        event.replyEmbeds(embed).setEphemeral(true).queue();
+    }
+    
+    private void handleSyncSlashCommand(SlashCommandInteractionEvent event) {
+        if (!hasAdminRole(event.getMember())) {
+            event.reply("You need admin permissions to use this command.").setEphemeral(true).queue();
+            return;
+        }
+        
+        syncCommands();
+        event.reply("Slash commands synced with Discord!").setEphemeral(true).queue();
+    }
+    
+    private boolean hasAdminRole(net.dv8tion.jda.api.entities.Member member) {
+        if (member == null) return false;
+        String adminRoleId = config.getAdminRoleId();
+        if (adminRoleId == null || adminRoleId.isEmpty()) return true;
+        return member.getRoles().stream().anyMatch(role -> role.getId().equals(adminRoleId));
     }
 
     public boolean isConnected() {

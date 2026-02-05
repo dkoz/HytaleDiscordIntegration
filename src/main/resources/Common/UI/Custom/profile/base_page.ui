@@ -1,0 +1,43 @@
+$C = "../Common.ui";
+
+$C.@PageOverlay {}
+
+$C.@Panel {
+    Anchor: (Width: 700, Height: 600);
+    Padding: (Full: 15);
+    LayoutMode: Top;
+
+    Group #Base {
+        FlexWeight: 1;
+        LayoutMode: Top;
+
+        Label #Title {
+            Text: "Player Profile";
+            Style: (FontSize: 28, TextColor: #e6edf5, HorizontalAlignment: Center);
+            Padding: (Bottom: 10);
+        }
+
+        Group {
+            Padding: (Top: 10);
+            Anchor: (Height: 2);
+            Background: #FFFFFF;
+        }
+
+        Group #ProfileContent {
+            Anchor: (Width: 700, Height: 460);
+            LayoutMode: TopScrolling;
+            ScrollbarStyle: $C.@DefaultScrollbarStyle;
+            Padding: (Full: 15);
+
+            Group #BodyRow {
+                LayoutMode: Top;
+                Padding: (Top: 8);
+            }
+        }
+    }
+
+    $C.@BackButton {
+        Anchor: (Bottom: 5, Left: 5);
+        Padding: (Top: 10);
+    }
+}

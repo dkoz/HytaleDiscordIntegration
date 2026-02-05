@@ -320,6 +320,28 @@ public class DiscordIntegration extends JavaPlugin {
         return linkCodeManager;
     }
     
+    public void restartBot() {
+        if (discordBot != null) {
+            discordBot.shutdown();
+        }
+        
+        messageRelay = new MessageRelay(config);
+        discordBot = new DiscordBot(config, this::handleDiscordMessage);
+        
+        discordBot.start().thenAccept(success -> {
+            if (success) {
+                System.out.println("[Discord Integration] Bot restarted successfully!");
+                updatePlayerCount();
+            } else {
+                System.out.println("[Discord Integration] Bot restart failed!");
+            }
+        });
+    }
+    
+    public boolean isBotConnected() {
+        return discordBot != null && discordBot.isConnected();
+    }
+
     public void notifyPlayerDeath(String username, String cause) {
         if (messageRelay != null) {
             messageRelay.sendDeathMessage(username, cause);

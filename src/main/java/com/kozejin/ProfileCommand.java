@@ -5,13 +5,13 @@ import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.command.system.CommandContext;
 import com.hypixel.hytale.server.core.command.system.basecommands.AbstractPlayerCommand;
+import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 
 import javax.annotation.Nonnull;
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.util.UUID;
 
 public class ProfileCommand extends AbstractPlayerCommand {
 
@@ -39,15 +39,17 @@ public class ProfileCommand extends AbstractPlayerCommand {
         DiscordIntegration plugin = DiscordIntegration.getInstance();
         PlayerDataStorage storage = plugin.getPlayerDataStorage();
         PlayerData playerData;
-        String targetUsername;
+        UUID targetUuid;
         
         if (parts.length > 1) {
-            targetUsername = parts[1];
+            String targetUsername = parts[1];
             playerData = null;
+            targetUuid = null;
             
             for (PlayerData data : storage.getAllPlayers().values()) {
                 if (data.getUsername().equalsIgnoreCase(targetUsername)) {
                     playerData = data;
+                    targetUuid = data.getUuid();
                     break;
                 }
             }
@@ -58,7 +60,7 @@ public class ProfileCommand extends AbstractPlayerCommand {
             }
         } else {
             playerData = storage.getPlayerData(player.getUuid());
-            targetUsername = player.getUsername();
+            targetUuid = player.getUuid();
             
             if (playerData == null) {
                 player.sendMessage(Message.raw("Error: Your player data not found!"));
@@ -66,18 +68,7 @@ public class ProfileCommand extends AbstractPlayerCommand {
             }
         }
         
-        SimpleDateFormat dateFormat = new SimpleDateFormat("MMM dd, yyyy");
-        String firstLoginDate = dateFormat.format(new Date(playerData.getFirstLoginTime()));
-        String discordStatus = playerData.getDiscordId() != null ? "Linked" : "Not linked";
-        
-        player.sendMessage(Message.raw("Player Profile: " + targetUsername));
-        player.sendMessage(Message.raw("Total Playtime: " + playerData.getFormattedPlayTime()));
-        player.sendMessage(Message.raw("First Login: " + firstLoginDate));
-        player.sendMessage(Message.raw("Discord: " + discordStatus));
-        player.sendMessage(Message.raw("Player Kills: " + playerData.getPlayerKills()));
-        player.sendMessage(Message.raw("Mob Kills: " + playerData.getMobKills()));
-        player.sendMessage(Message.raw("Deaths: " + playerData.getTotalDeaths()));
-        player.sendMessage(Message.raw("Blocks Placed: " + playerData.getBlocksPlaced()));
-        player.sendMessage(Message.raw("Blocks Broken: " + playerData.getBlocksBroken()));
+        Player playerEntity = context.senderAs(Player.class);
+        playerEntity.getPageManager().openCustomPage(ref, store, new ProfilePage(player, targetUuid));
     }
 }
