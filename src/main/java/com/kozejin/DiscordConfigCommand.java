@@ -76,10 +76,10 @@ public class DiscordConfigCommand extends AbstractPlayerCommand {
         player.sendMessage(Message.raw("/discord status - Show bot connection status"));
         player.sendMessage(Message.raw("/discord sync - Sync slash commands with Discord"));
         player.sendMessage(Message.raw("=== Available Fields ==="));
-        player.sendMessage(Message.raw("General: enabled, channelId, commandChannelId, adminRoleId, linkedRoleId"));
+        player.sendMessage(Message.raw("General: enabled, channelId, chatChannelId, commandChannelId, adminRoleId, linkedRoleId"));
         player.sendMessage(Message.raw("Chat: enableInGameChat, showChatTag, chatTagText, allowOtherBotMessages"));
         player.sendMessage(Message.raw("Messages: enableDeathMessages"));
-        player.sendMessage(Message.raw("Webhooks: useWebhooks, webhookUrl, serverName, serverAvatarUrl, defaultPlayerAvatarUrl, avatarCacheMinutes"));
+        player.sendMessage(Message.raw("Webhooks: useWebhooks, webhookUrl, chatWebhookUrl, serverName, serverAvatarUrl, defaultPlayerAvatarUrl, avatarCacheMinutes"));
     }
 
     private void getConfigValue(PlayerRef player, String fieldName) {
@@ -112,6 +112,7 @@ public class DiscordConfigCommand extends AbstractPlayerCommand {
         player.sendMessage(Message.raw("=== General ==="));
         player.sendMessage(Message.raw("enabled: " + config.isEnabled()));
         player.sendMessage(Message.raw("channelId: " + config.getChannelId()));
+        player.sendMessage(Message.raw("chatChannelId: " + config.getChatChannelId()));
         player.sendMessage(Message.raw("commandChannelId: " + config.getCommandChannelId()));
         player.sendMessage(Message.raw("adminRoleId: " + config.getAdminRoleId()));
         player.sendMessage(Message.raw("linkedRoleId: " + config.getLinkedRoleId()));
@@ -125,6 +126,7 @@ public class DiscordConfigCommand extends AbstractPlayerCommand {
         player.sendMessage(Message.raw("=== Webhooks ==="));
         player.sendMessage(Message.raw("useWebhooks: " + config.isUseWebhooks()));
         player.sendMessage(Message.raw("webhookUrl: " + config.getWebhookUrl()));
+        player.sendMessage(Message.raw("chatWebhookUrl: " + config.getChatWebhookUrl()));
         player.sendMessage(Message.raw("serverName: " + config.getServerName()));
         player.sendMessage(Message.raw("serverAvatarUrl: " + config.getServerAvatarUrl()));
         player.sendMessage(Message.raw("defaultPlayerAvatarUrl: " + config.getDefaultPlayerAvatarUrl()));
@@ -168,6 +170,7 @@ public class DiscordConfigCommand extends AbstractPlayerCommand {
         player.sendMessage(Message.raw("Bot Enabled: " + config.isEnabled()));
         player.sendMessage(Message.raw("Bot Connected: " + connected));
         player.sendMessage(Message.raw("Channel ID: " + config.getChannelId()));
+        player.sendMessage(Message.raw("Chat Channel ID: " + config.getEffectiveChatChannelId()));
         player.sendMessage(Message.raw("Command Channel ID: " + config.getCommandChannelId()));
         player.sendMessage(Message.raw("Webhooks: " + (config.isUseWebhooks() ? "Enabled" : "Disabled")));
         player.sendMessage(Message.raw("In-Game Chat: " + (config.isEnableInGameChat() ? "Enabled" : "Disabled")));
@@ -186,6 +189,8 @@ public class DiscordConfigCommand extends AbstractPlayerCommand {
                 return config.getChatTagText();
             case "channelid":
                 return config.getChannelId();
+            case "chatchannelid":
+                return config.getChatChannelId();
             case "commandchannelid":
                 return config.getCommandChannelId();
             case "adminroleid":
@@ -200,6 +205,8 @@ public class DiscordConfigCommand extends AbstractPlayerCommand {
                 return config.isUseWebhooks();
             case "webhookurl":
                 return config.getWebhookUrl();
+            case "chatwebhookurl":
+                return config.getChatWebhookUrl();
             case "servername":
                 return config.getServerName();
             case "serveravatarurl":
@@ -230,6 +237,9 @@ public class DiscordConfigCommand extends AbstractPlayerCommand {
             case "channelid":
                 config.setChannelId(value.replace("\"", ""));
                 break;
+            case "chatchannelid":
+                config.setChatChannelId(value.replace("\"", ""));
+                break;
             case "commandchannelid":
                 config.setCommandChannelId(value.replace("\"", ""));
                 break;
@@ -250,6 +260,9 @@ public class DiscordConfigCommand extends AbstractPlayerCommand {
                 break;
             case "webhookurl":
                 config.setWebhookUrl(value.replace("\"", ""));
+                break;
+            case "chatwebhookurl":
+                config.setChatWebhookUrl(value.replace("\"", ""));
                 break;
             case "servername":
                 config.setServerName(value.replace("\"", ""));

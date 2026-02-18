@@ -3,6 +3,7 @@ package com.kozejin;
 public class DiscordConfig {
     private String botToken = "Bot Token Here";
     private String channelId = "111111111111111";
+    private String chatChannelId = "";
     private String commandChannelId = "222222222222222";
     private String adminRoleId = "333333333333333";
     private String linkedRoleId = "";
@@ -15,6 +16,7 @@ public class DiscordConfig {
     
     private boolean useWebhooks = false;
     private String webhookUrl = "";
+    private String chatWebhookUrl = "";
     private String serverName = "Server";
     private String serverAvatarUrl = "";
     private String defaultPlayerAvatarUrl = "";
@@ -59,6 +61,13 @@ public class DiscordConfig {
     public String getChannelId() { return channelId; }
     public void setChannelId(String channelId) { this.channelId = channelId; }
     
+    public String getChatChannelId() { return chatChannelId; }
+    public void setChatChannelId(String chatChannelId) { this.chatChannelId = chatChannelId; }
+    
+    public String getEffectiveChatChannelId() {
+        return (chatChannelId != null && !chatChannelId.isEmpty()) ? chatChannelId : channelId;
+    }
+    
     public String getCommandChannelId() { return commandChannelId; }
     public void setCommandChannelId(String commandChannelId) { this.commandChannelId = commandChannelId; }
     
@@ -85,6 +94,13 @@ public class DiscordConfig {
     
     public String getWebhookUrl() { return webhookUrl; }
     public void setWebhookUrl(String webhookUrl) { this.webhookUrl = webhookUrl; }
+    
+    public String getChatWebhookUrl() { return chatWebhookUrl; }
+    public void setChatWebhookUrl(String chatWebhookUrl) { this.chatWebhookUrl = chatWebhookUrl; }
+    
+    public String getEffectiveChatWebhookUrl() {
+        return (chatWebhookUrl != null && !chatWebhookUrl.isEmpty()) ? chatWebhookUrl : webhookUrl;
+    }
     
     public String getServerName() { return serverName; }
     public void setServerName(String serverName) { this.serverName = serverName; }

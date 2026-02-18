@@ -30,6 +30,7 @@ public class DiscordBot extends ListenerAdapter {
     private final BiConsumer<String, String> onDiscordMessage;
     private JDA jda;
     private TextChannel textChannel;
+    private TextChannel chatChannel;
 
     public DiscordBot(DiscordConfig config, BiConsumer<String, String> onDiscordMessage) {
         this.config = config;
@@ -69,6 +70,15 @@ public class DiscordBot extends ListenerAdapter {
                 System.out.println("[Discord] Could not find channel with ID: " + config.getChannelId());
                 future.complete(false);
                 return future;
+            }
+
+            String chatChannelId = config.getEffectiveChatChannelId();
+            chatChannel = jda.getTextChannelById(chatChannelId);
+            if (chatChannel == null) {
+                System.out.println("[Discord] Chat channel not found, falling back to main channel");
+                chatChannel = textChannel;
+            } else if (!chatChannelId.equals(config.getChannelId())) {
+                System.out.println("[Discord] Using separate chat channel: " + chatChannel.getName());
             }
 
             System.out.println("[Discord] Bot connected successfully to channel: " + textChannel.getName());
@@ -111,6 +121,7 @@ public class DiscordBot extends ListenerAdapter {
             jda = null;
         }
         textChannel = null;
+        chatChannel = null;
     }
 
     public void sendMessage(String message) {
@@ -158,7 +169,8 @@ public class DiscordBot extends ListenerAdapter {
             return;
         }
 
-        if (channelId.equals(config.getChannelId())) {
+        String effectiveChatChannelId = config.getEffectiveChatChannelId();
+        if (channelId.equals(effectiveChatChannelId)) {
             onDiscordMessage.accept(username, message);
         }
     }
@@ -392,8 +404,30 @@ public class DiscordBot extends ListenerAdapter {
         );
     }
 
+    public void sendChatMessage(String message) {
+        if (chatChannel != null) {
+            chatChannel.sendMessage(message).queue(
+                success -> {},
+                error -> System.out.println("[Discord] Failed to send chat message: " + error.getMessage())
+            );
+        }
+    }
+
     public void sendWebhookMessage(String username, String content, String avatarUrl) {
-        if (!config.isUseWebhooks() || config.getWebhookUrl() == null || config.getWebhookUrl().isEmpty()) {
+        sendWebhookToUrl(config.getWebhookUrl(), username, content, avatarUrl);
+    }
+
+    public void sendChatWebhookMessage(String username, String content, String avatarUrl) {
+        String url = config.getEffectiveChatWebhookUrl();
+        if (!config.isUseWebhooks() || url == null || url.isEmpty()) {
+            sendChatMessage("**" + username + "**: " + content);
+            return;
+        }
+        sendWebhookToUrl(url, username, content, avatarUrl);
+    }
+
+    private void sendWebhookToUrl(String webhookUrl, String username, String content, String avatarUrl) {
+        if (webhookUrl == null || webhookUrl.isEmpty()) {
             sendMessage("**" + username + "**: " + content);
             return;
         }
@@ -406,7 +440,7 @@ public class DiscordBot extends ListenerAdapter {
         }
 
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(config.getWebhookUrl()))
+                .uri(URI.create(webhookUrl))
                 .header("Content-Type", "application/json")
                 .header("User-Agent", "HytaleDiscordIntegration/1.0")
                 .POST(HttpRequest.BodyPublishers.ofString(json.toString()))
@@ -425,11 +459,23 @@ public class DiscordBot extends ListenerAdapter {
     }
 
     public void dispatchToDiscord(UUID playerUuid, String name, String content, String fallbackAvatar) {
+        dispatchToDiscord(playerUuid, name, content, fallbackAvatar, false);
+    }
+
+    public void dispatchToDiscord(UUID playerUuid, String name, String content, String fallbackAvatar, boolean isChat) {
         if (!config.isUseWebhooks()) {
             if (!name.equals(config.getServerName())) {
-                sendMessage("**" + name + "**: " + content);
+                if (isChat) {
+                    sendChatMessage("**" + name + "**: " + content);
+                } else {
+                    sendMessage("**" + name + "**: " + content);
+                }
             } else {
-                sendMessage(content);
+                if (isChat) {
+                    sendChatMessage(content);
+                } else {
+                    sendMessage(content);
+                }
             }
             return;
         }
@@ -437,24 +483,31 @@ public class DiscordBot extends ListenerAdapter {
         AvatarCache.setExpireTime(config.getAvatarCacheMinutes());
 
         try {
-            if (playerUuid == null) {
-                sendWebhookMessage(name, content, fallbackAvatar);
-                return;
+            String avatarUrl = fallbackAvatar;
+            if (playerUuid != null) {
+                String cachedAvatar = AvatarCache.get(playerUuid.toString());
+                if (cachedAvatar != null) {
+                    avatarUrl = cachedAvatar;
+                } else {
+                    String hytaleAvatarUrl = "https://hyvatar.io/render/" + name + "?size=128";
+                    AvatarCache.put(playerUuid.toString(), hytaleAvatarUrl);
+                    avatarUrl = hytaleAvatarUrl;
+                }
             }
 
-            String cachedAvatar = AvatarCache.get(playerUuid.toString());
-            if (cachedAvatar != null) {
-                sendWebhookMessage(name, content, cachedAvatar);
-                return;
+            if (isChat) {
+                sendChatWebhookMessage(name, content, avatarUrl);
+            } else {
+                sendWebhookMessage(name, content, avatarUrl);
             }
-
-            String hytaleAvatarUrl = "https://hyvatar.io/render/" + name + "?size=128";
-            AvatarCache.put(playerUuid.toString(), hytaleAvatarUrl);
-            sendWebhookMessage(name, content, hytaleAvatarUrl);
         } catch (Exception e) {
             System.err.println("[Discord] Dispatch error: " + e.getMessage());
             e.printStackTrace();
-            sendWebhookMessage(name, content, fallbackAvatar);
+            if (isChat) {
+                sendChatWebhookMessage(name, content, fallbackAvatar);
+            } else {
+                sendWebhookMessage(name, content, fallbackAvatar);
+            }
         }
     }
 }

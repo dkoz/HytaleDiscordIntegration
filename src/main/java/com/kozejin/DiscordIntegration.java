@@ -162,7 +162,7 @@ public class DiscordIntegration extends JavaPlugin {
         playerDataStorage.saveAllPlayers();
         
         handlePlayerLeave(playerRef.getUsername());
-        updatePlayerCount();
+        updatePlayerCount(-1);
     }
     
     private void onServerBoot(BootEvent event) {
@@ -302,8 +302,13 @@ public class DiscordIntegration extends JavaPlugin {
     }
 
     private void updatePlayerCount() {
+        updatePlayerCount(0);
+    }
+
+    private void updatePlayerCount(int offset) {
         if (discordBot != null && discordBot.isConnected()) {
-            int online = Universe.get().getPlayerCount();
+            int online = Universe.get().getPlayerCount() + offset;
+            if (online < 0) online = 0;
             discordBot.updatePlayerCount(online, 0);
         }
     }

@@ -27,13 +27,13 @@ public class MessageRelay {
 
         if (config.isUseWebhooks()) {
             String fallbackAvatar = config.getDefaultPlayerAvatarUrl();
-            bot.dispatchToDiscord(playerUuid, playerName, message, fallbackAvatar);
+            bot.dispatchToDiscord(playerUuid, playerName, message, fallbackAvatar, true);
         } else {
             String formatted = config.getMessageFormat().getServerToDiscord()
                 .replace("{player}", playerName)
                 .replace("{message}", message);
             System.out.println("[Discord Integration] Sending to Discord: " + formatted);
-            bot.sendMessage(formatted);
+            bot.sendChatMessage(formatted);
         }
     }
 
